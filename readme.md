@@ -1,4 +1,4 @@
-# `niimprint` &mdash; Experimental Niimbot Printer Client
+# `niimprint` &mdash; Niimbot Printer Client
 
 **Fork changelog & differences from original version:**
 
