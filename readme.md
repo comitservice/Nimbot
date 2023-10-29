@@ -31,15 +31,23 @@ Options:
 
 ## Examples
 
-**B21, USB connection, 30x15 mm (240x120 px) label.** On linux, you can try to omit `--addr` option and let the script to auto-detect the serial port (it will fail if there're multiple available ports). On windows, serial ports will be named like `COM1`, `COM2` etc. (check in device manager).
+**B21, USB connection, 30x15 mm (240x120 px) label**
 
 ```
-python niimprint --addr /dev/ttyACM0 --image examples/B21_30x15mm_240x120px.png
+python niimprint -a /dev/ttyACM0 -i examples/B21_30x15mm_240x120px.png
 ```
 
-**B21, bluetooth connection:** untested (todo).
+Notes: on linux, you can try to omit `--addr` option and let the script to auto-detect the serial port (it will fail if there're multiple available ports). On windows, serial ports will be named like `COM1`, `COM2` etc. (check in device manager).
 
-**D11:** completly untested, however original fork supports it. If you have D11 at hand and willing to test, please open an issue!
+**B21, bluetooth connection, same label**
+
+```
+python niimprint -c bluetooth -a "E2:E1:08:03:09:87" -i examples/B21_30x15mm_240x120px.png
+```
+
+Notes: it seems like B21 has two bluetooth adresses starting with `C2:E1` and `E2:E1` respectively. It works only if you disconnect from `C2:E1` and connect to `E2:E1`. Also after connecting to `E2:E1` in bluetoothctl I always get `org.bluez.Error.NotAvailable br-connection-profile-unavailable` error, but printing works regardless.
+
+**D11:** completly untested, however original fork supports it. If you have D11 at hand and willing to test, please contact me!
 
 ## Image vs Label size
 

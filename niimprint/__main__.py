@@ -45,7 +45,6 @@ from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 )
 def print_cmd(model, conn, addr, density, image):
     assert model != "d11", "D11 support may be broken (test yourself)"
-    assert conn != "bluetooth", "Bluetooth support may be broken (test yourself)"
 
     if conn == "bluetooth":
         addr = addr.upper()
