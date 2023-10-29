@@ -5,11 +5,11 @@ class NiimbotPacket:
 
     @classmethod
     def from_bytes(cls, pkt):
-        assert pkt[:2] == b'\x55\x55'
-        assert pkt[-2:] == b'\xaa\xaa'
+        assert pkt[:2] == b"\x55\x55"
+        assert pkt[-2:] == b"\xaa\xaa"
         type_ = pkt[2]
         len_ = pkt[3]
-        data = pkt[4:4+len_]
+        data = pkt[4 : 4 + len_]
 
         checksum = type_ ^ len_
         for i in data:
@@ -22,7 +22,9 @@ class NiimbotPacket:
         checksum = self.type ^ len(self.data)
         for i in self.data:
             checksum ^= i
-        return bytes((0x55, 0x55, self.type, len(self.data), *self.data, checksum, 0xaa, 0xaa))
+        return bytes(
+            (0x55, 0x55, self.type, len(self.data), *self.data, checksum, 0xAA, 0xAA)
+        )
 
     def __repr__(self):
         return f"<NiimbotPacket type={self.type} data={self.data}>"

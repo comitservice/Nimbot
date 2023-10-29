@@ -1,44 +1,76 @@
-import argparse
-import printerclient
-import printencoder
+import re
 
+import click
 from PIL import Image
-import time
 
-# import math
-# mm_to_px = lambda x: math.ceil(x / 25.4 * 203)
-# px_to_mm = lambda x: math.ceil(x / 25.4 * 203)
+from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description="Niimbot printer client")
-    parser.add_argument('-a', '--address', required=True, help="MAC address of target device")
-    parser.add_argument('--no-check', action='store_true', help="Skips image check")
-    parser.add_argument('-d', '--density', type=int, default=2, help="Printer density (1~3)")
-    parser.add_argument('-t', '--type', type=int, default=1, help="Label type (1~3)")
-    parser.add_argument('-n', '--quantity', type=int, default=1, help="Number of copies")
-    parser.add_argument('image', help="PIL supported image file")
-    args = parser.parse_args()
 
-    img = Image.open(args.image)
-    if img.width / img.height > 1:
-        # rotate clockwise 90deg, upper line (left line) prints first.
-        img = img.transpose(Image.ROTATE_270)
-    assert args.no_check or (img.width == 96 and img.height < 600)
+@click.command("print")
+@click.option(
+    "-m",
+    "--model",
+    type=click.Choice(["b21", "d11"], False),
+    default="b21",
+    show_default=True,
+    help="Niimbot printer model",
+)
+@click.option(
+    "-c",
+    "--conn",
+    type=click.Choice(["usb", "bluetooth"]),
+    default="usb",
+    show_default=True,
+    help="Connection type",
+)
+@click.option(
+    "-a",
+    "--addr",
+    help="Bluetooth MAC address OR serial device path",
+)
+@click.option(
+    "-d",
+    "--density",
+    type=click.IntRange(1, 5),
+    default=5,
+    show_default=True,
+    help="Print density",
+)
+@click.option(
+    "-i",
+    "--image",
+    type=click.Path(exists=True),
+    required=True,
+    help="Image path",
+)
+def print_cmd(model, conn, addr, density, image):
+    assert model != "d11", "D11 support may be broken (test yourself)"
+    assert conn != "bluetooth", "Bluetooth support may be broken (test yourself)"
 
-    printer = printerclient.PrinterClient(args.address)
-    printer.set_label_type(args.type)
-    printer.set_label_density(args.density)
+    if conn == "bluetooth":
+        addr = addr.upper()
+        assert re.fullmatch(r"([0-9A-F]{2}:){5}([0-9A-F]{2})", addr), "Bad MAC address"
+        transport = BluetoothTransport(addr)
+    if conn == "usb":
+        port = addr if addr is not None else "auto"
+        transport = SerialTransport(port=port)
 
-    printer.start_print()
-    printer.allow_print_clear()
-    printer.start_page_print()
-    printer.set_dimension(img.height, img.width)
-    printer.set_quantity(args.quantity)
-    for pkt in printencoder.naive_encoder(img):
-        printer._send(pkt)
-    printer.end_page_print()
-    while (a := printer.get_print_status())['page'] != args.quantity:
-        # print(a)
-        time.sleep(0.1)
-    printer.end_print()
+    if model == "b21":
+        # This may be wrong, but B21 doesn't accept anything larger. It's just shy of
+        # 50mm * 8 px/mm = 400px (for vertical space it's always 8 px/mm), so lgtm.
+        max_height_px = 384
+    if model == "d11":
+        max_height_px = 100  # I don't have D11 to test
+
+    # Image is printed left-to-right. Generally, we expect image width to be larger
+    # than image height, because that's the usual sticker aspect ratio.
+    image = Image.open(image)
+    assert image.width > image.height, "Are you sure image rotation is right?"
+    assert image.height <= max_height_px, f"Image height too big for {model}"
+
+    printer = PrinterClient(transport)
+    printer.print_image(image, density=density)
+
+
+if __name__ == "__main__":
+    print_cmd()
