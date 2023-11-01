@@ -111,6 +111,7 @@ class PrinterClient:
         for pkt in self._encode_image(image):
             self._send(pkt)
         self.end_page_print()
+        time.sleep(0.3)  # FIXME: Check get_print_status()
         while not self.end_print():
             time.sleep(0.1)
 
@@ -132,7 +133,7 @@ class PrinterClient:
             pkt_len = self._packetbuf[3] + 7
             if len(self._packetbuf) >= pkt_len:
                 packet = NiimbotPacket.from_bytes(self._packetbuf[:pkt_len])
-                self._log_buffer("   ", packet.to_bytes())
+                self._log_buffer("recv", packet.to_bytes())
                 packets.append(packet)
                 del self._packetbuf[:pkt_len]
         return packets
@@ -142,12 +143,12 @@ class PrinterClient:
 
     def _log_buffer(self, prefix: str, buff: bytes):
         msg = ":".join(f"{i:#04x}"[-2:] for i in buff)
-        logging.debug(msg)
+        logging.debug(f"{prefix}: {msg}")
 
     def _transceive(self, reqcode, data, respoffset=1):
         respcode = respoffset + reqcode
         packet = NiimbotPacket(reqcode, data)
-        self._log_buffer("-->", packet.to_bytes())
+        self._log_buffer("send", packet.to_bytes())
         self._send(packet)
         resp = None
         for _ in range(6):
