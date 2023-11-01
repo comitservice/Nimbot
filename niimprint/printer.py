@@ -101,8 +101,6 @@ class PrinterClient:
         self._packetbuf = bytearray()
 
     def print_image(self, image: Image, density: int = 3):
-        # Internally, we're slicing the image vertically, so it's convenient to rotate
-        image = image.transpose(Image.ROTATE_270)
         self.set_label_density(density)
         self.set_label_type(1)
         self.start_print()

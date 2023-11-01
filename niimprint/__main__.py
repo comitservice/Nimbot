@@ -10,7 +10,7 @@ from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 @click.option(
     "-m",
     "--model",
-    type=click.Choice(["b21", "d11"], False),
+    type=click.Choice(["b1", "b21", "d11"], False),
     default="b21",
     show_default=True,
     help="Niimbot printer model",
@@ -37,16 +37,23 @@ from niimprint import BluetoothTransport, PrinterClient, SerialTransport
     help="Print density",
 )
 @click.option(
+    "-r",
+    "--rotate",
+    type=click.Choice(["0", "90", "180", "270"]),
+    default="0",
+    show_default=True,
+    help="Image rotation (clockwise)",
+)
+@click.option(
     "-i",
     "--image",
     type=click.Path(exists=True),
     required=True,
     help="Image path",
 )
-def print_cmd(model, conn, addr, density, image):
-    assert model != "d11", "D11 support may be broken (test yourself)"
-
+def print_cmd(model, conn, addr, density, rotate, image):
     if conn == "bluetooth":
+        assert conn is not None, "--addr argument required for bluetooth connection"
         addr = addr.upper()
         assert re.fullmatch(r"([0-9A-F]{2}:){5}([0-9A-F]{2})", addr), "Bad MAC address"
         transport = BluetoothTransport(addr)
@@ -54,18 +61,16 @@ def print_cmd(model, conn, addr, density, image):
         port = addr if addr is not None else "auto"
         transport = SerialTransport(port=port)
 
-    if model == "b21":
-        # This may be wrong, but B21 doesn't accept anything larger. It's just shy of
-        # 50mm * 8 px/mm = 400px (for vertical space it's always 8 px/mm), so lgtm.
-        max_height_px = 384
+    if model in ("b1", "b21"):
+        max_width_px = 384
     if model == "d11":
-        max_height_px = 100  # I don't have D11 to test
+        max_width_px = 96
 
-    # Image is printed left-to-right. Generally, we expect image width to be larger
-    # than image height, because that's the usual sticker aspect ratio.
     image = Image.open(image)
-    assert image.width > image.height, "Are you sure image rotation is right?"
-    assert image.height <= max_height_px, f"Image height too big for {model}"
+    if rotate != "0":
+        # PIL library rotates counter clockwise, so we need to multiply by -1
+        image = image.rotate(-int(rotate), expand=True)
+    assert image.width <= max_width_px, f"Image width too big for {model.upper()}"
 
     printer = PrinterClient(transport)
     printer.print_image(image, density=density)
