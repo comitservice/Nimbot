@@ -1,3 +1,4 @@
+import logging
 import re
 
 import click
@@ -51,7 +52,18 @@ from niimprint import BluetoothTransport, PrinterClient, SerialTransport
     required=True,
     help="Image path",
 )
-def print_cmd(model, conn, addr, density, rotate, image):
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help="Enable verbose logging",
+)
+def print_cmd(model, conn, addr, density, rotate, image, verbose):
+    logging.basicConfig(
+        level="DEBUG" if verbose else "INFO",
+        format="%(levelname)s | %(module)s:%(funcName)s:%(lineno)d - %(message)s",
+    )
+
     if conn == "bluetooth":
         assert conn is not None, "--addr argument required for bluetooth connection"
         addr = addr.upper()

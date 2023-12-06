@@ -82,7 +82,7 @@ class SerialTransport(BaseTransport):
         if len(all_ports) == 0:
             raise RuntimeError("No serial ports detected")
         if len(all_ports) > 1:
-            msg = "Too many serial ports, please select one via SERIAL_PORT env var:"
+            msg = "Too many serial ports, please select specific one:"
             for port, desc, hwid in all_ports:
                 msg += f"\n- {port} : {desc} [{hwid}]"
             raise RuntimeError(msg)

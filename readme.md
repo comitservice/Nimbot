@@ -28,6 +28,7 @@ Options:
   -d, --density INTEGER RANGE  Print density  [default: 5; 1<=x<=5]
   -r, --rotate [0|90|180|270]  Image rotation (clockwise)  [default: 0]
   -i, --image PATH             Image path  [required]
+  -v, --verbose                Enable verbose logging
   --help                       Show this message and exit.
 ```
 
