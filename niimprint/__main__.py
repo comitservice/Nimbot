@@ -11,7 +11,7 @@ from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 @click.option(
     "-m",
     "--model",
-    type=click.Choice(["b1", "b21", "d11"], False),
+    type=click.Choice(["b1", "b18", "b21", "d11"], False),
     default="b21",
     show_default=True,
     help="Niimbot printer model",
@@ -73,7 +73,7 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
         port = addr if addr is not None else "auto"
         transport = SerialTransport(port=port)
 
-    if model in ("b1", "b21"):
+    if model in ("b1", "b18", "b21"):
         max_width_px = 384
     if model == "d11":
         max_width_px = 96
