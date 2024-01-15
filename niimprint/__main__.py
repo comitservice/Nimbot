@@ -78,6 +78,10 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
     if model == "d11":
         max_width_px = 96
 
+    if model == "b18" and density > 3:
+        logging.warning("Density > 3 is not supported for B18")
+        density = 3
+
     image = Image.open(image)
     if rotate != "0":
         # PIL library rotates counter clockwise, so we need to multiply by -1
