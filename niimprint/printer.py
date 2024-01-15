@@ -106,9 +106,6 @@ class PrinterClient:
         self.start_print()
         # self.allow_print_clear()  # Something unsupported in protocol decoding (B21)
         self.start_page_print()
-
-        print(image.height, image.width)
-
         self.set_dimension(image.height, image.width)
         # self.set_quantity(1)  # Same thing (B21)
         for pkt in self._encode_image(image):
@@ -149,7 +146,6 @@ class PrinterClient:
         logging.debug(f"{prefix}: {msg}")
 
     def _transceive(self, reqcode, data, respoffset=1):
-        print(f"Transceive {reqcode} {data}")
         respcode = respoffset + reqcode
         packet = NiimbotPacket(reqcode, data)
         self._log_buffer("send", packet.to_bytes())
