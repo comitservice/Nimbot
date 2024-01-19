@@ -22,7 +22,7 @@ $ python niimprint --help
 Usage: niimprint [OPTIONS]
 
 Options:
-  -m, --model [b1|b18|b21|d11]     Niimbot printer model  [default: b21]
+  -m, --model [b1|b18|b21|d11|d110]     Niimbot printer model  [default: b21]
   -c, --conn [usb|bluetooth]   Connection type  [default: usb]
   -a, --addr TEXT              Bluetooth MAC address OR serial device path
   -d, --density INTEGER RANGE  Print density  [default: 5; 1<=x<=5]
