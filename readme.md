@@ -2,7 +2,7 @@
 
 **Fork changelog & differences from original version:**
 
-- Tested on Niimbot B21 and Python 3.11. Niimbot D11 support may be broken!
+- Tested on Niimbot B1, B18, B21, D11, D110 and Python 3.11
 - Added transport abstraction: switch between bluetooth and USB (serial)
 - Disabled checksum calculation for image encoding (works fine without it so far)
 - Switched to [click](https://click.palletsprojects.com/) CLI library instead of argparse
@@ -72,10 +72,6 @@ python niimprint -c bluetooth -a "E2:E1:08:03:09:87" -r 90 -i examples/B21_80x50
 ```
 
 [![](examples/B21_80x50_result.png)]()
-
-**D11**
-
-Completly untested yet, however original fork supports it. If you have D11 at hand and willing to test, please open an issue!
 
 ## Licence
 
