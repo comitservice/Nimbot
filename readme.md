@@ -2,7 +2,7 @@
 
 **Fork changelog & differences from original version:**
 
-- Tested on Niimbot B21 and Python 3.11. Niimbot D11 support may be broken!
+- Tested on Niimbot B1, B18, B21, D11, D110 and Python 3.11
 - Added transport abstraction: switch between bluetooth and USB (serial)
 - Disabled checksum calculation for image encoding (works fine without it so far)
 - Switched to [click](https://click.palletsprojects.com/) CLI library instead of argparse
@@ -22,7 +22,7 @@ $ python niimprint --help
 Usage: niimprint [OPTIONS]
 
 Options:
-  -m, --model [b1|b21|d11]     Niimbot printer model  [default: b21]
+  -m, --model [b1|b18|b21|d11|d110]     Niimbot printer model  [default: b21]
   -c, --conn [usb|bluetooth]   Connection type  [default: usb]
   -a, --addr TEXT              Bluetooth MAC address OR serial device path
   -d, --density INTEGER RANGE  Print density  [default: 5; 1<=x<=5]
@@ -44,7 +44,7 @@ Generally, the image comes out of the printer with the same orientation you see 
 
 As far as we've tested, Niimbot printers have **8 pixels per mm** (~203 dpi) resolution. The CLI prints the image you provided as-is, without any checks of the actual label size, so be careful. However the script will check if the image width is too big for selected printer. The maximum width in pixels is usually slightly less than specified maximum width in mm:
 
-- **B21, B1**: max 384 pixels (almost equal to 50 mm * 8 px/mm = 400)
+- **B21, B1, B18**: max 384 pixels (almost equal to 50 mm * 8 px/mm = 400)
 - **D11**: max 96 pixels (almost equal to 15 mm * 8 px/mm = 120)
 
 ### USB connection:
@@ -72,10 +72,6 @@ python niimprint -c bluetooth -a "E2:E1:08:03:09:87" -r 90 -i examples/B21_80x50
 ```
 
 [![](examples/B21_80x50_result.png)]()
-
-**D11**
-
-Completly untested yet, however original fork supports it. If you have D11 at hand and willing to test, please open an issue!
 
 ## Licence
 
