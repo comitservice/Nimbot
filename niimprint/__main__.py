@@ -4,15 +4,16 @@ import re
 import click
 from PIL import Image
 
-from niimprint import BluetoothTransport, PrinterClient, SerialTransport
+# TODO: Not using poetry, why is this needed?
+from printer import BluetoothTransport, PrinterClient, SerialTransport
 
 
 @click.command("print")
 @click.option(
     "-m",
     "--model",
-    type=click.Choice(["b1", "b18", "b21", "d11", "d110"], False),
-    default="b21",
+    type=click.Choice(["b1", "b18", "b21", "b3s", "d11", "d110"], False),
+    default="b3s",
     show_default=True,
     help="Niimbot printer model",
 )
@@ -65,6 +66,9 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
     )
 
     if conn == "bluetooth":
+        # TODO: Don't upstream
+        addr = addr if addr is not None else "D8:F7:22:05:07:31"
+
         assert conn is not None, "--addr argument required for bluetooth connection"
         addr = addr.upper()
         assert re.fullmatch(r"([0-9A-F]{2}:){5}([0-9A-F]{2})", addr), "Bad MAC address"
@@ -75,6 +79,8 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
 
     if model in ("b1", "b18", "b21"):
         max_width_px = 384
+    if model in ("b3s"):
+        max_width_px = 560
     if model in ("d11", "d110"):
         max_width_px = 96
 

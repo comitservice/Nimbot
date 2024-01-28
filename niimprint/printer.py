@@ -10,7 +10,8 @@ import serial
 from PIL import Image, ImageOps
 from serial.tools.list_ports import comports as list_comports
 
-from niimprint.packet import NiimbotPacket
+# TODO: Not using poetry, why is this needed?
+from packet import NiimbotPacket
 
 
 class InfoEnum(enum.IntEnum):
@@ -89,7 +90,12 @@ class SerialTransport(BaseTransport):
         return all_ports[0][0]
 
     def read(self, length: int) -> bytes:
-        return self._serial.read(length)
+        available = self._serial.in_waiting
+
+        if available == 0:
+            return bytes()
+
+        return self._serial.read(available)
 
     def write(self, data: bytes):
         return self._serial.write(data)
@@ -108,12 +114,52 @@ class PrinterClient:
         self.start_page_print()
         self.set_dimension(image.height, image.width)
         # self.set_quantity(1)  # Same thing (B21)
-        for pkt in self._encode_image(image):
-            self._send(pkt)
+
+        for packet in self._encode_image(image):
+
+            # TODO: What about other models?
+            interrupt = self._try_recv()
+
+            if interrupt:
+                if interrupt.type != 0xD3:
+                    raise RuntimeError(f"Unexpected interrupt: {interrupt}")
+
+                # Printer is warning about excessive buffer use/printing error
+                while True:
+                    status = self.get_print_status()
+
+                    if status["status"] & ~0b11 != 0:
+                        raise RuntimeError(f"Unexpected status: {status}")
+
+                    if status["free_buffer"] < 0x100:
+                        continue
+
+                    # Conditions are ideal again, continue
+                    break
+
+            # Send one line worth of bitmap command
+            self._send(packet)
+
         self.end_page_print()
-        time.sleep(0.3)  # FIXME: Check get_print_status()
-        while not self.end_print():
+
+        # TODO: What about other models?
+        while True:
+            status = self.get_print_status()
+            logging.debug(status)
+
+            if status["page"] != 0:
+                break
+
+            # 1   = printing?
+            # 2   = done?
+            # 256 = cover open?
+            # 512 = out of paper?
+            if status["status"] & ~0b11:
+                raise RuntimeError("Unexpected status")
+
             time.sleep(0.1)
+
+        self.end_print()
 
     def _encode_image(self, image: Image):
         img = ImageOps.invert(image.convert("L")).convert("1")
@@ -126,17 +172,22 @@ class PrinterClient:
             pkt = NiimbotPacket(0x85, header + line_data)
             yield pkt
 
-    def _recv(self):
-        packets = []
+    def _try_recv(self):
         self._packetbuf.extend(self._transport.read(1024))
-        while len(self._packetbuf) > 4:
-            pkt_len = self._packetbuf[3] + 7
-            if len(self._packetbuf) >= pkt_len:
-                packet = NiimbotPacket.from_bytes(self._packetbuf[:pkt_len])
-                self._log_buffer("recv", packet.to_bytes())
-                packets.append(packet)
-                del self._packetbuf[:pkt_len]
-        return packets
+
+        if len(self._packetbuf) < 4:
+            return None # Incomplete header
+
+        pkt_len = self._packetbuf[3] + 7
+
+        if len(self._packetbuf) < pkt_len:
+            return None # Incomplete packet
+
+        packet = NiimbotPacket.from_bytes(self._packetbuf[:pkt_len])
+        del self._packetbuf[:pkt_len]
+
+        self._log_buffer("recv", packet.to_bytes())
+        return packet
 
     def _send(self, packet):
         self._transport.write(packet.to_bytes())
@@ -150,19 +201,32 @@ class PrinterClient:
         packet = NiimbotPacket(reqcode, data)
         self._log_buffer("send", packet.to_bytes())
         self._send(packet)
-        resp = None
-        for _ in range(6):
-            for packet in self._recv():
-                if packet.type == 219:
-                    raise ValueError
-                elif packet.type == 0:
-                    raise NotImplementedError
-                elif packet.type == respcode:
-                    resp = packet
-            if resp:
-                return resp
-            time.sleep(0.1)
-        return resp
+
+        deadline = time.time() + 2
+        unexpected = 0
+
+        while True:
+            packet = self._try_recv()
+
+            if not packet:
+                if deadline < time.time():
+                    raise RuntimeError("Timed out")
+
+                # NB: No delay
+                continue
+
+            if packet.type == 219:
+                raise RuntimeError(f"NACK? {packet}")
+            elif packet.type == 0:
+                raise NotImplementedError
+            elif packet.type == respcode:
+                return packet
+
+            logging.warning(f"Unexpected packet: {packet}")
+            unexpected += 1
+
+            if unexpected > 6:
+                raise RuntimeError("Too many unexpected packets")
 
     def get_info(self, key):
         if packet := self._transceive(RequestCodeEnum.GET_INFO, bytes((key,)), key):
@@ -273,9 +337,7 @@ class PrinterClient:
         return bool(packet.data[0])
 
     def set_dimension(self, w, h):
-        packet = self._transceive(
-            RequestCodeEnum.SET_DIMENSION, struct.pack(">HH", w, h)
-        )
+        packet = self._transceive(RequestCodeEnum.SET_DIMENSION, struct.pack(">HH", w, h))
         return bool(packet.data[0])
 
     def set_quantity(self, n):
@@ -284,5 +346,14 @@ class PrinterClient:
 
     def get_print_status(self):
         packet = self._transceive(RequestCodeEnum.GET_PRINT_STATUS, b"\x01", 16)
-        page, progress1, progress2 = struct.unpack(">HBB", packet.data)
-        return {"page": page, "progress1": progress1, "progress2": progress2}
+
+        # TODO: Compat!
+        page, progress1, progress2, free_buffer, status = struct.unpack('>HBBHH', packet.data)
+
+        return {
+            "page": page,
+            "progress1": progress1,
+            "progress2": progress2,
+            "free_buffer": free_buffer,
+            "status": status
+        }
