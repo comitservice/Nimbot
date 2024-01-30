@@ -17,6 +17,16 @@ Project is tested on Python 3.11, but should work on other versions.
 
 Just run `niimprint --help`
 
+### Print and tape notes
+
+* `TT14*50` is prone to overfeeding. Roll it for 1.5mm back after each printed label.
+* «Bubble B» stickers have variable dimensions and colors (green, blue, teal, pink, yellow — in that order).
+  Be careful with layouts.
+* Almost all stickers have rounded corners, count it when designing layouts.
+* Note that different print densities will vary the pixel size, so count at least 2-5 pixels from the edges
+  to avoid clipping.
+* **Always** use good dithering (Floyd-Steinberg, Sierra, Burkes) for grayscale images.
+
 ## Examples
 
 ### B21, USB connection, 30x15 mm (240x120 px) label
