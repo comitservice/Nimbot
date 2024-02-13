@@ -117,3 +117,4 @@ nav:
   - Home: index.md
   - FAQ: faq.md
   - Printers & Tapes: hardware.md
+  - Protocol: protocol.md
