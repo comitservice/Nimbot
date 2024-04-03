@@ -53,7 +53,9 @@ For USB connection, you can omit the `--addr` argument and let the script auto-d
 
 ### Bluetooth connection:
 
-It seems like B21 (and maybe other models?) has two bluetooth adresses. For me, they start with `C2:E1` and `E2:E1` respectively. Connection works only if you disconnect from `C2:E1` and connect to `E2:E1`. Also after connecting to `E2:E1` via bluetoothctl I always get `org.bluez.Error.NotAvailable br-connection-profile-unavailable` error, but printing works fine regardless.
+It seems like B21 and B1 (and maybe other models?) have two bluetooth adresses. They have the same last 3 bytes, but the first 3 are rotated (for example `AA:BB:CC:DD:EE:FF` and `CC:AA:BB:DD:EE:FF`). Connection works only if you disconnect from one and connect to the other. After connecting via bluetoothctl you may get `org.bluez.Error.NotAvailable br-connection-profile-unavailable` error, but printing works fine regardless.
+
+To identify which address is the correct one, run `bluetoothctl info` on the address you want to check. The incorrect one might list `UUID: Generic Access Profile` and `UUID: Generic Attribute Profile`, while the correct one will list `UUID: Serial Port`.
 
 ## Examples
 
