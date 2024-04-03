@@ -20,4 +20,4 @@ jobs:
       - run: poetry install --no-interaction
 
       - name: Test niimprint running
-        run: python -m niimprint --help
+        run: poetry run python -m niimprint --help
