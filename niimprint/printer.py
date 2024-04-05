@@ -111,7 +111,14 @@ class PrinterClient:
         for pkt in self._encode_image(image):
             self._send(pkt)
         self.end_page_print()
-        time.sleep(0.3)  # FIXME: Check get_print_status()
+        while True:
+            status = self.get_print_status()
+            if status["error"]:
+                raise RuntimeError("Failure during print")
+            if status["finished"] == 1:
+                break
+            print(f"Progress: {status['progress']}")
+
         while not self.end_print():
             time.sleep(0.1)
 
@@ -284,5 +291,11 @@ class PrinterClient:
 
     def get_print_status(self):
         packet = self._transceive(RequestCodeEnum.GET_PRINT_STATUS, b"\x01", 16)
-        page, progress1, progress2 = struct.unpack(">HBB", packet.data)
-        return {"page": page, "progress1": progress1, "progress2": progress2}
+        finished = bool(packet.data[1])
+        progress = packet.data[2]
+        error = packet.data[6]
+        return {
+            "finished": finished,
+            "progress": progress,
+            "error": error,
+        }
