@@ -17,6 +17,7 @@ jobs:
       - name: Set up Poetry
         uses: snok/install-poetry@v1
 
+      # todo: add venv caching
       - run: poetry install --no-interaction
 
       - name: Test niimprint running
